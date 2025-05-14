@@ -1,0 +1,20 @@
+{
+  "name": "invoice_project",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Amogh",
+  "license": "MIT",
+  "description": "",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "nodemon": "^3.1.10",
+    "path": "^0.12.7",
+    "pdfkit": "^0.17.1",
+    "pg": "^8.16.0"
+  }
+}
