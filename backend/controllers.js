@@ -1,5 +1,5 @@
 const pool = require('./db.js'); 
-const PDFdoc = require('pdfkit'); 
+const PDFDocument = require('pdfkit'); 
 
 const createInvoice = async (req, res) => {
     const { customer_id } = req.body; 
@@ -10,7 +10,7 @@ const createInvoice = async (req, res) => {
         ); 
         res.status(201).json(result.rows[0]); 
     } catch(err) { 
-        res.status(500).json({ error : err.Message }); 
+        res.status(500).json({ error : err.message }); 
     }
 }; 
 
@@ -54,7 +54,7 @@ const deleteLastItem = async (req, res) => {
 
         res.status(200).json({ message : 'Last Item deleted'}); 
     } catch(err) {
-        res.status(500).json({ error : err.Message});
+        res.status(500).json({ error : err.message});
     }
 }; 
 
@@ -65,7 +65,7 @@ const clearInvoice = async (req, res) => {
         await pool.query('UPDATE Invoice SET total_amount = 0 WHERE invoice_id = $1', [invoice_id]);
         res.status(200).json({ message : 'Invoice cleared' });  
     } catch(err) {
-        res.status(500).json({error : err.Message}); 
+        res.status(500).json({error : err.messageessage}); 
     }
 }; 
 
@@ -98,6 +98,7 @@ const generatePDF = async (req, res) => {
 
         doc.end(); 
     } catch (err) { 
+        console.log('PDF Generation Error: ', err); 
         res.status(500).json({ error : err.message });
     }
 };
