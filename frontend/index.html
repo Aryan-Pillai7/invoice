@@ -8,6 +8,10 @@
 <body>
     <div class="container">
         <h1>Invoice Generator</h1>
+        <div class="customer-info">
+            <input type="text" id="customerNameInput" placeholder="Enter Customer Name" >
+            <input type="tel" id="customerPhoneInput" placeholder="Enter Phone Number (required)" required>
+        </div>
         <div class="controls">
             <select id="productSelect">
                 <option value="" disabled selected>Select Product</option>
@@ -22,7 +26,7 @@
             <button onclick="createInvoice()">Create Invoice</button>
             <button onclick="clearInvoice()">Clear Invoice</button>
             <button onclick="deleteLastItem()">Delete Last Item</button>
-            <button onclick="generatePDF()">Generate PDF</button>
+            <!-- <button onclick="generatePDF()">Generate PDF</button> -->
         </div>
     </div>
 
