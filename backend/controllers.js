@@ -126,46 +126,85 @@ const createInvoice = async (req, res) => {
 const addItem = async (req, res) => {
     const { invoice_id, product_id, quantity } = req.body; 
 
-    try {
-        const priceRes = await pool.query('SELECT price FROM Product WHERE product_id = $1', [product_id]);
-        const price = priceRes.rows[0].price; 
-        const lineTotal = quantity * price; 
+    console.log("Add item - controllers.js");
+    console.log("Adding item with data:", { invoice_id, product_id, quantity });
 
-        await pool.query(
-            'INSERT INTO Invoice_Item (invoice_id, product_id, quantity, lineTotal) VALUES($1, $2, $3, $4)', 
-            [invoice_id, product_id, quantity, lineTotal] 
+    try {
+        const priceRes = await pool.query('SELECT price FROM product WHERE product_id = $1', [product_id]);
+        const price = priceRes.rows[0].price; 
+        const line_total = quantity * price; 
+
+        console.log("Calculated line total:", line_total);
+
+        const insertResult = await pool.query(
+            'INSERT INTO invoice_item (invoice_id, product_id, quantity, line_total) VALUES($1, $2, $3, $4) RETURNING *', 
+            [invoice_id, product_id, quantity, line_total] 
         ); 
 
+        console.log("Insert result:", insertResult.rows[0]);
+
         await pool.query(
-            'UPDATE Invoice SET total_amount = total_amount + $1 WHERE invoice_id = $2', 
-            [lineTotal, invoice_id]
+            'UPDATE invoice SET total_amount = total_amount + $1 WHERE invoice_id = $2', 
+            [line_total, invoice_id]
         );
 
-        res.status(200).json({ 'message' : 'Item Added'}); 
+        res.status(200).json({ 
+            message: 'Item Added',
+            lineTotal: line_total  // Keep the response field as lineTotal for frontend compatibility
+        }); 
     } catch(err) {
-        res.status(500).json({ error : err.message }); 
+        console.error("Error in addItem:", err);
+        res.status(500).json({ error: err.message }); 
     }
-}; 
+};
 
 const deleteLastItem = async (req, res) => {
     const invoice_id = req.params.invoice_id; 
     try {       
+        console.log('Attempting to delete last item for invoice:', invoice_id);
+        
+        // First, let's check the table structure and data
+        const tableInfo = await pool.query(`
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = 'invoice_item'
+        `);
+        console.log('Invoice_Item table structure:', tableInfo.rows);
+
+        // Check if there are any items for this invoice
+        const checkItems = await pool.query(
+            'SELECT * FROM invoice_item WHERE invoice_id = $1',
+            [invoice_id]
+        );
+        console.log('All items for invoice:', checkItems.rows);
+        
         const item = await pool.query(
-            `SELECT * FROM Invoice_Item WHERE invoice_id = $1 ORDER BY invoice_item_id DESC LIMIT 1`, 
+            `SELECT * FROM invoice_item WHERE invoice_id = $1 ORDER BY invoice_item_id DESC LIMIT 1`, 
             [invoice_id]
         ); 
-        if (item.rows.length===0) return res.status(404).json({ error : 'No item found' }); 
+        
+        console.log('Last item query result:', item.rows);
+        
+        if (item.rows.length === 0) {
+            console.log('No items found for invoice:', invoice_id);
+            return res.status(404).json({ error: 'No item found' }); 
+        }
 
-        const {invoice_item_id, lineTotal} = item.rows[0]; 
+        const {invoice_item_id, line_total} = item.rows[0]; 
+        console.log('Found item to delete:', { invoice_item_id, line_total });
 
-        await pool.query('DELETE FROM Invoice_Item WHERE invoice_item_id = $1', [invoice_item_id]); 
-        await pool.query('UPDATE Invoice SET total_amount = total_amount - $1 WHERE invoice_id=$2', [lineTotal, invoice_id]); 
+        await pool.query('DELETE FROM invoice_item WHERE invoice_item_id = $1', [invoice_item_id]); 
+        await pool.query('UPDATE invoice SET total_amount = total_amount - $1 WHERE invoice_id=$2', [line_total, invoice_id]); 
 
-        res.status(200).json({ message : 'Last Item deleted'}); 
+        res.status(200).json({ 
+            message: 'Last Item deleted', 
+            lineTotal: line_total  // Keep the response field as lineTotal for frontend compatibility
+        }); 
     } catch(err) {
-        res.status(500).json({ error : err.message});
+        console.error('Error in deleteLastItem:', err);
+        res.status(500).json({ error: err.message });
     }
-}; 
+};
 
 const clearInvoice = async (req, res) => {
     const { invoice_id } = req.params; 
